@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>Gallery Tags</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="./tags.css">
+
+<body>
+
+<p class="logo">
+    <a href="/">My Gallery</a>
+</p>
+<p id="tag-title" text-align="center">
+Tags
+</p>
+
+<ul id="tag-list" class="container">
+</ul>
+
+
+
+
+<iframe src="./file_list.html" title="index" style="display: none" name="indexframe">
+</iframe>
+
+
+<script>
+
+window.addEventListener("load", makeTags);
+
+const tagList = document.getElementById("tag-list");
+
+
+
+function makeTags() {
+    const doc = window.frames["indexframe"].document;
+    const paragraphs = doc.querySelectorAll('p');
+
+    const tags = new Set();
+
+    for (let i=0; i < paragraphs.length; ++i) {
+        const imageData = paragraphs[i].firstChild.data.split(" ***** ");
+        //const filename = imageData[0];
+        const description = imageData[1];
+
+        let list = description.split(" ");
+        for (let j=0; j < list.length; ++j) {
+            tags.add(list[j].toLowerCase());
+        }
+    }
+
+    for (const item of tags) {
+        if (item === "") {
+            continue;
+        }
+
+        const END = 9; // "tags.html".length
+        const urlLength = window.location.href.length;
+        const url = window.location.href.substr(0, urlLength - END);
+
+        const newUrl = url + "?" + item;
+
+        const tag = document.createElement("a");
+        tag.className = "rounded-box tag";
+        tag.href = newUrl;
+        tag.innerHTML = item;
+
+        tagList.appendChild(tag);
+    }
+}
+
+</script>
+
+</body>
+</html>

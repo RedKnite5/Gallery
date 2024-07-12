@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn instance to serve myproject
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+
+WorkingDirectory=/home/veronica/Documents/gallery
+Environment="PATH=/home/veronica/miniconda3/envs/mygallery/bin"
+ExecStart=/home/veronica/miniconda3/envs/mygallery/bin/gunicorn wsgi:app
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,23 @@
+
+# belongs at
+# /etc/nginx/sites-available/my_gallery_s
+
+server {
+    listen 80;
+    listen [::]:80;
+    location / {
+        include /etc/nginx/mime.types;
+        root /home/veronica/Documents/gallery/;
+    }
+
+    location ~* ^/image/(.*) {
+        root /home/veronica/Documents/gallery/;
+        try_files /images/$1 /downloaded/$1 =404;
+    }
+
+    location /list-media/ {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000/list-media/;
+    }
+}
+

@@ -1,0 +1,125 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.visuallyhidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.top-bar {
+  height: 50px;
+  background-color: blue;
+  display: flex;
+  align-items: center;
+}
+
+.title {
+  height: 50px;
+  font-size: 40px;
+  margin: 0px;
+  padding-left: 10px;
+  padding-right: 10px;
+  display: inline-block;
+  
+}
+
+#searchbar {
+    height: 35px;
+    font-size: 30px;
+    flex-grow: 1;
+    margin-right: 10px;
+    padding: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.box-link {
+  padding: 0px 16px;
+  line-height: 50px;
+  text-align: center;
+}
+
+.box-link:link,
+.box-link:visited {
+    text-decoration: none;
+    color: white;
+    background-color: black;
+}
+
+.box-link:hover,
+.box-link:active {
+    background-color: #343434;
+}
+
+/*#gallery {
+
+}*/
+
+.image {
+  width: 33%;
+  height: auto;
+  margin: 0 .166%;
+}
+
+#back-arrow {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+}
+
+.circle-container {
+  display: none;
+  place-items: center;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 48px;
+  height: 48px;
+}
+
+.circle {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: gray;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.circle-container:hover .circle {
+  opacity: .3;
+}
+
+#tags {
+  background-color: pink;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: "Roboto", sans-serif;
+  font-size: 20px;
+  text-align: center;
+  width: 100%;
+}
+
+#full-image {
+  height: 95svh;
+  width: 100%;
+  object-fit: contain;
+}

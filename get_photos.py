@@ -4,7 +4,6 @@ from pprint import pprint
 from pathlib import Path
 import shutil
 import os
-from datetime import datetime, timezone
 import sqlite3
 import json
 
@@ -12,6 +11,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import requests
 from dateutil import parser
+
+
+IMPORT_ALBUM_TITLE = "My Gallery S"
 
 def parse_time(string: str) -> int:
 	parsed_datetime = parser.parse(string)
@@ -22,7 +24,7 @@ def get_token():
 	SCOPES = ["https://www.googleapis.com/auth/photoslibrary"]
 
 	# Path to the token file
-	token_path = "_token.pickle"
+	token_path = "secrets_and_data/_token.pickle"
 
 	# Check if the token file exists
 	if os.path.exists(token_path):
@@ -37,15 +39,15 @@ def get_token():
 			credentials.refresh(Request())
 		else:
 			flow = InstalledAppFlow.from_client_secrets_file(
-				"_client_secret.json", SCOPES)
+				"secrets_and_data/_client_secret.json", SCOPES)
 			credentials = flow.run_local_server(port=0)
 
 		# Save the credentials for the next run
 		with open(token_path, "wb") as token:
 			pickle.dump(credentials, token)
 
-	access_token = credentials.token
-	return access_token
+	token = credentials.token
+	return token
 
 access_token = get_token()
 
@@ -61,7 +63,7 @@ def get_id():
 	resp = response.json()
 
 	for album in resp["albums"]:
-		if album["title"] == "My Gallery S":
+		if album["title"] == IMPORT_ALBUM_TITLE:
 			return album["id"]
 
 
@@ -97,17 +99,7 @@ def fetch_all_photos():
 
 photos = fetch_all_photos()
 
-#with open("photos_download.json", "w+") as file:
-#	file.write(json.dumps(photos))
-
-#with open("photos_download.json", "r") as file:
-#	photos = json.load(file)
-#	print("All photos: ")
-#	pprint(photos)
-#print()
-
-
-conn = sqlite3.connect("database.db")
+conn = sqlite3.connect("secrets_and_data/database.db")
 cur = conn.cursor()
 
 
@@ -123,8 +115,6 @@ def download_images(items):
 		width = metadata.get("width", 4000)
 		
 		desc = item.get("description", "")
-
-		#print(desc, end=" ")
 
 		if filename.endswith("C.mov"):
 			print("\n.mov: ")
@@ -142,16 +132,11 @@ def download_images(items):
 				shutil.copyfileobj(r.raw, f)
 			image_data = Path(path).read_bytes()
 
-			#print(f"{filename = }")
 			cur.execute(
 				"SELECT description FROM media WHERE filename = ? AND time = ?",
 				(filename, parsed_time)
 			)
 			cur_desc = cur.fetchone()
-
-			if filename == "IMG_0174.PNG":
-				print(f"{cur_desc = }")
-				print("old time: ", parsed_time)
 			
 			if cur_desc:
 				if cur_desc[0] != desc:
@@ -186,13 +171,6 @@ def insert_image(row):
 				os.rename(f"downloaded/{orig_file}", f"downloaded/{row[0]}")
 			return
 		except sqlite3.IntegrityError:
-
-
-			if orig_file == "IMG_0174.PNG":
-				print("new time: ", row[1])
-
-
-
 			if count == 1:
 				file, ext = row[0].rsplit(".", 1)
 				row[0] = f"{file}({count}).{ext}"

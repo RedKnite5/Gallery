@@ -6,7 +6,8 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-
+# service file from
+# https://medium.com/swlh/mini-project-deploying-python-application-with-nginx-30f9b25b195
 
 # Extra Files:
 # /etc/nginx/nginx.conf
@@ -17,7 +18,7 @@ from flask import Flask, jsonify, request
 # sudo nginx -s reload
 
 
-conn = sqlite3.connect("database.db")
+conn = sqlite3.connect("secrets_and_data/database.db")
 
 
 app = Flask(__name__)
@@ -30,4 +31,5 @@ def list_images():
 
 if __name__ == "__main__":
 	app.run(debug=True, host="0.0.0.0")
+
 

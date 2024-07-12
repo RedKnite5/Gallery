@@ -3,6 +3,7 @@ __pycache__
 .env
 images
 downloaded
+secrets_and_data
 client_secret.json
 cred.json
 my-gallery-service-keys.json

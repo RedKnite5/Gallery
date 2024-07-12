@@ -29,7 +29,7 @@ def image_json_map(file_gen):
 
 		with open("./images/" + file, "r") as f:
 			image_json = json.load(f)
-		
+
 		im_name = str(image_json["title"])
 		if len(im_name) > 51:
 			last_index = im_name.rfind(".")
@@ -60,7 +60,7 @@ data = [
 ]
 
 
-con = sqlite3.connect("database.db")
+con = sqlite3.connect("secrets_and_data/database.db")
 cur = con.cursor()
 
 CREATE_TABLE = """CREATE TABLE IF NOT EXISTS media (

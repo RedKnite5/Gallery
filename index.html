@@ -182,6 +182,20 @@ function nextOrPrev(event) {
     changeBigImage(elem);
 }
 
+function keyDown(event) {
+    console.log("pressed: ", event.key);
+
+    const bigImage = document.getElementById("full-image");
+    const filenameStart = bigImage.src.lastIndexOf("/");
+    const selector = ".image[src$='" + decodeURI(bigImage.src.substr(filenameStart)) + "']";
+    const image = document.querySelector(selector);
+    if (event.key === "ArrowLeft") {
+        changeBigImage(image.previousElementSibling);
+    } else if (event.key === "ArrowRight") {
+        changeBigImage(image.nextElementSibling);
+    }
+}
+
 function changeBigImage(elem) {
     if (elem === null) {
         return;
@@ -214,6 +228,7 @@ function saveNewTags(event) {
 }
 
 function BackToGallery() {
+    document.removeEventListener("keydown", keyDown);
     galleryDiv.style.display = "block";
     topBar.style.display = "block";
     const box = document.getElementById("full-image");
@@ -227,6 +242,7 @@ function BackToGallery() {
 function openBigImage(e) {
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
+    document.addEventListener("keydown", keyDown);
     makeBigImage(e.target.getAttribute("description"), e.target.src);
 }
 

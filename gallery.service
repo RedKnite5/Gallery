@@ -12,4 +12,3 @@ ExecStart=/home/veronica/miniconda3/envs/mygallery/bin/gunicorn wsgi:app
 
 [Install]
 WantedBy=multi-user.target
-

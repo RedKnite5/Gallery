@@ -60,7 +60,7 @@ headers = {
 
 def get_id():
 	get_albums_url = "https://photoslibrary.googleapis.com/v1/albums"
-	response = requests.get(get_albums_url, headers=headers)
+	response = requests.get(get_albums_url, headers=headers, timeout=3600)
 
 	resp = response.json()
 
@@ -85,7 +85,7 @@ def fetch_all_photos():
 		if next_page_token:
 			params["pageToken"] = next_page_token
 
-		response = requests.post(SEARCH_API_URL, headers=headers, json=params)
+		response = requests.post(SEARCH_API_URL, headers=headers, json=params, timeout=3600)
 		if response.status_code != 200:
 			raise Exception(f"API request failed with status code {response.status_code}: {response.text}")
 
@@ -115,7 +115,7 @@ def download_images(items):
 		parsed_time = parse_time(time)
 		height = metadata.get("height", 4000)
 		width = metadata.get("width", 4000)
-		
+
 		desc = item.get("description", "")
 
 		if filename.endswith("C.mov"):
@@ -124,7 +124,7 @@ def download_images(items):
 
 		url = f"{base_url}=w{width}-h{height}"
 
-		r = requests.get(url, stream=True)
+		r = requests.get(url, stream=True, timeout=3600)
 
 		path = f"downloaded/{filename}"
 
@@ -139,7 +139,7 @@ def download_images(items):
 				(filename, parsed_time)
 			)
 			cur_desc = cur.fetchone()
-			
+
 			if cur_desc:
 				if cur_desc[0] != desc:
 					print(f"updateing {filename} from '{cur_desc[0]}' to '{desc}'")
@@ -151,10 +151,10 @@ def download_images(items):
 					print(f"skipping {filename}")
 			else:
 				insert_image([filename, parsed_time, desc, image_data])
-					
+
 		else:
 			print("error status: ", r.status_code)
-	
+
 	conn.commit()
 	print()
 
@@ -180,11 +180,8 @@ def insert_image(row):
 				file, end = row[0].rsplit("(", 1)
 				num, ext = end.rsplit(")", 1)
 				row[0] = f"{file}({count}){ext}"
-			
+
 			count += 1
 
 
-
 download_images(photos)
-
-

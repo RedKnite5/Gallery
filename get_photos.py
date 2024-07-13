@@ -3,7 +3,6 @@ import pickle
 from pprint import pprint
 from pathlib import Path
 import shutil
-import os
 import sqlite3
 import json
 
@@ -12,8 +11,11 @@ from google.auth.transport.requests import Request
 import requests
 from dateutil import parser
 
+from dotenv import load_dotenv
 
-IMPORT_ALBUM_TITLE = "My Gallery S"
+load_dotenv("secrets_and_data/.env")
+
+IMPORT_ALBUM_TITLE = os.environ.get("ALBUMTITLE", "My Gallery S")
 
 def parse_time(string: str) -> int:
 	parsed_datetime = parser.parse(string)

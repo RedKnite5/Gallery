@@ -46,6 +46,14 @@ a {
     margin-bottom: 0px;
 }
 
+#passwordLabel {
+  margin: 5px;
+}
+
+#passDiv {
+  margin-top: 10px;
+}
+
 .box-link {
   padding: 0px 16px;
   line-height: 50px;
@@ -72,6 +80,10 @@ a {
   width: 33%;
   height: auto;
   margin: 0 .166%;
+}
+
+#full-image:focus {
+  outline: none;
 }
 
 #back-arrow {
@@ -108,7 +120,7 @@ a {
 }
 
 #tags {
-  background-color: pink;
+  /*background-color: pink;*/
   margin: 0;
   padding: 0;
   border: 0;

@@ -29,8 +29,8 @@
 
 <form id="form" action="/save" method="post" style="display: none">
     <label id="form-label" class="visuallyhidden">Tags</label>
-    <textarea id="tags" name="tag-list" rows=1 style="overflow: hidden;">
-    </textarea>
+    <input id="tags" name="tag-list" style="overflow: hidden;">
+    </input>
 </form>
 
 <script>
@@ -47,6 +47,7 @@ function setup() {
 
     const tags_textarea = document.getElementById("tags");
     tags_textarea.addEventListener("change", saveNewTags);
+    tagForm.addEventListener("submit", submitTags);
     
     setupPassword();
 }
@@ -62,18 +63,14 @@ function setupPassword() {
         passwordLabel.id = "passwordLabel";
         passwordLabel.for = "passwordInput";
         passwordLabel.innerText = "Password";
-        passwordLabel.style.margin = "5px";
 
         const passDiv = document.createElement("div");
         passDiv.id = "passDiv";
-        passDiv.style.marginTop = "10px";
 
         passDiv.appendChild(passwordLabel);
         passDiv.appendChild(passwordInput);
 
         document.body.appendChild(passDiv);
-
-
     } else {
         makeImages();
     }
@@ -220,11 +217,22 @@ function saveNewTags(event) {
     tagText.style.height = "";
     tagText.style.height = tagText.scrollHeight + "px";
 
-    let form = document.getElementById("form");
-    form.submit();
+    const form = document.getElementById("form");
+    //form.requestSubmit();
     console.log("submitted");
     console.log(form)
+}
 
+async function submitTags(event) {
+    event.preventDefault();
+    const tags = document.getElementById("tags");
+    console.log("submitting: ", tags.value);
+    await fetch("/saving", {
+        method: "POST",
+        body: tags.value
+    });
+
+    return false;
 }
 
 function BackToGallery() {

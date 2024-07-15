@@ -213,7 +213,7 @@ function changeBigImage(elem) {
         makeBigImage(desc, elem.firstChild.src);
     }
 
-    tagText.innerHTML = elem.getAttribute("description");
+    tagText.value = elem.getAttribute("description");
 }
 
 function saveNewTags(event) {
@@ -228,10 +228,10 @@ function saveNewTags(event) {
 }
 
 function BackToGallery() {
-    document.removeEventListener("keydown", keyDown);
     galleryDiv.style.display = "block";
     topBar.style.display = "block";
     const box = document.getElementById("full-image");
+    box.removeEventListener("keydown", keyDown);
     box.parentNode.removeChild(box);
     tagForm.style.display = "none";
     backbutton.style.display = "none";
@@ -242,8 +242,7 @@ function BackToGallery() {
 function openBigImage(e) {
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
-    document.addEventListener("keydown", keyDown);
-    makeBigImage(e.target.getAttribute("description"), e.target.src);
+    const bigImage = makeBigImage(e.target.getAttribute("description"), e.target.src);
 }
 
 function makeBigImage(description, source) {
@@ -260,9 +259,13 @@ function makeBigImage(description, source) {
 
     bigImage.id = "full-image";
     bigImage.src = source;
+    bigImage.setAttribute("tabindex", "0");
     bigImage.addEventListener("click", nextOrPrev);
+    bigImage.addEventListener("keydown", keyDown);
 
     bigImageDiv.appendChild(bigImage);
+
+    bigImage.focus();
     return bigImage;
 }
 

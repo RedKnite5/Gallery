@@ -3,8 +3,8 @@
 # /etc/nginx/sites-available/my_gallery_s
 
 server {
-    listen 80;
-    listen [::]:80;
+    listen 127.0.0.1:80;
+    #listen [::]:80;
     location / {
         include /etc/nginx/mime.types;
         root /home/veronica/Documents/gallery/;

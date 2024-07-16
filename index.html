@@ -226,10 +226,21 @@ function saveNewTags(event) {
 async function submitTags(event) {
     event.preventDefault();
     const tags = document.getElementById("tags");
+    const bigImage = document.getElementById("full-image");
+
+    let src = bigImage.src;
+    if (!src) {
+        src = bigImage.firstChild.src;
+    }
+    
     console.log("submitting: ", tags.value);
-    await fetch("/saving", {
+    await fetch("/saving/", {
         method: "POST",
-        body: tags.value
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({tags: tags.value, name: src})
     });
 
     return false;
@@ -251,6 +262,7 @@ function openBigImage(e) {
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
     const bigImage = makeBigImage(e.target.getAttribute("description"), e.target.src);
+    tagText.value = e.target.getAttribute("description");
 }
 
 function makeBigImage(description, source) {

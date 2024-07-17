@@ -164,8 +164,18 @@ function nextOrPrev(event) {
     const width = event.target.offsetWidth;  // reflow
 
     // used to get gallery version of current image
-    const filenameStart = event.target.src.lastIndexOf("/");
-    const selector = ".image[src$='" + decodeURI(event.target.src.substr(filenameStart)) + "']";
+    let source = event.target.firstElementChild.src;
+    //console.log(event.target);
+    //console.log(event.target.firstElementChild);
+    //console.log(source);
+
+    if (!source) {
+        source = event.target.firstElementChild.firstElementChild.src;
+        //console.log("video source: ", source);
+    }
+    const filenameStart = source.lastIndexOf("/");
+    const src = decodeURI(source.substr(filenameStart));
+    const selector = ".image[src$='" + src + "'],.image:has(> source[src$='" + src + "'])";
     //console.log("target: ", event.target);
     //console.log("selector: ", selector);
     
@@ -176,11 +186,13 @@ function nextOrPrev(event) {
         elem = document.querySelector(selector).nextElementSibling;
     }
 
+    //console.log("selected: ", elem);
+
     changeBigImage(elem);
 }
 
 function keyDown(event) {
-    console.log("pressed: ", event.key);
+    //console.log("pressed: ", event.key);
 
     const bigImage = document.getElementById("full-image");
     const filenameStart = bigImage.src.lastIndexOf("/");
@@ -197,6 +209,8 @@ function changeBigImage(elem) {
     if (elem === null) {
         return;
     }
+
+    //console.log("Changing to: ", elem);
 
     const box = document.getElementById("full-image");
     box.parentNode.removeChild(box);
@@ -280,8 +294,8 @@ function makeBigImage(description, source) {
     bigImage.id = "full-image";
     bigImage.src = source;
     bigImage.setAttribute("tabindex", "0");
-    bigImage.addEventListener("click", nextOrPrev);
-    bigImage.addEventListener("keydown", keyDown);
+    bigImageDiv.addEventListener("click", nextOrPrev);
+    bigImageDiv.addEventListener("keydown", keyDown);
 
     bigImageDiv.appendChild(bigImage);
 

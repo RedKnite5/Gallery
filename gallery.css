@@ -130,8 +130,13 @@ a {
   width: 100%;
 }
 
+#big-image-div {
+  text-align: center;
+  width: 100%
+}
+
 #full-image {
   height: 95svh;
-  width: 100%;
+  max-width: 98%;
   object-fit: contain;
 }

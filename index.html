@@ -37,6 +37,8 @@
 
 
 const passwordProtected = false;  // not inteded to actually be secure
+const preload_videos = false;
+
 const video_formats = [".mov", ".mp4"];
 
 window.addEventListener("load", setup);
@@ -376,6 +378,10 @@ function makeImage(filename) {
     } else if (tag === "video") {
         const video = document.createElement("video");
         video.controls = "controls";
+
+        if (!preload_videos) {
+            video.preload = "none";
+        }
 
         const source = document.createElement("source");
         source.src = filename;

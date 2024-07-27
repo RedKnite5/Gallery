@@ -44,6 +44,7 @@ def insert_image(name):
 			)
 			existing_time = res.fetchone()[0]
 			if timestamp == existing_time:
+				print(f"skipping {name}")
 				return
 
 			if count == 1:

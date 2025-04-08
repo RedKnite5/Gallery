@@ -2,22 +2,42 @@
 # belongs at
 # /etc/nginx/sites-available/my_gallery_s
 
+gzip on;
+gzip_proxied any;
+gzip_min_length 1000;
+gzip_comp_level 5;
+gzip_types text/plain text/css application/json application/javascript text/javascript;
+
 server {
     listen 80;
     listen 3000;
     listen [::]:80;
     listen [::]:3000;
+
+    server_name MyGallery.net;
+
+    add_header Content-Security-Policy "default-src 'self';";
+
     location / {
-        include /etc/nginx/mime.types;
+        root /var/www/html;
+        index index.html index.nginx-debian.html;
+    }
+
+    location /favicon.ico {
         root /home/veronica/Documents/gallery/;
+    }
+
+    location /gallery/ {
+        #include /etc/nginx/mime.types;
+        alias /home/veronica/Documents/gallery/;
     }
 
     location ~* ^/image/(.*) {
         root /home/veronica/Documents/gallery/;
-        try_files /images/$1 /downloaded/$1 =404;
+        try_files /images/$1 /webp_bucket/$1 /downloaded/$1 /custom/$1  =404;
     }
 
-    location /list-media/ {
+    location /gallery/list-media/ {
         include proxy_params;
         proxy_pass http://127.0.0.1:8000/list-media/;
     }

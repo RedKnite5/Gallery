@@ -4,7 +4,12 @@ __pycache__
 images
 downloaded
 secrets_and_data
+new_webp
+webp_bucket
+webp_verified
 client_secret.json
+custom
+to_add
 cred.json
 my-gallery-service-keys.json
 _*

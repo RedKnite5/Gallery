@@ -25,4 +25,4 @@ photos_download.json
 app.log
 *.log
 
-
+thumbnails/*

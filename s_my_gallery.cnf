@@ -46,5 +46,10 @@ server {
         include proxy_params;
         proxy_pass http://127.0.0.1:8000/saving/;
     }
+
+    location /thumbnail/ {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000;
+    }
 }
 

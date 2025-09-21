@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 
 
-conn = sqlite3.connect("secrets_and_data/database.db")
+conn = sqlite3.connect("secrets_and_data/database_no_blob.db")
 cur = conn.cursor()
 
 
@@ -27,8 +27,8 @@ def insert_image(name):
 	while True:
 		try:
 			cur.execute(
-				"INSERT INTO media VALUES (?, ?, ?, ?)",
-				(name, timestamp, "", data)
+				"INSERT INTO media VALUES (?, ?, ?)",
+				(name, timestamp, "")
 			)
 			print(f"INSERT {name}, {timestamp}, '', {data[:20]}")
 

@@ -3,6 +3,7 @@ const passwordProtected = false;  // not inteded to actually be secure
 const preload_videos = false;
 
 const video_formats = [".mov", ".mp4"];
+VID_START = "http://localhost:3000/thumbnail";
 
 window.addEventListener("load", setup);
 
@@ -12,6 +13,7 @@ function setup() {
 
     const tags_textarea = document.getElementById("tags");
     tags_textarea.addEventListener("change", saveNewTags);
+    tagForm.addEventListener("change", submitTags);
     tagForm.addEventListener("submit", submitTags);
     
     setupPassword();
@@ -114,6 +116,8 @@ function search(event) {
     const tags = searchbar.value.toLowerCase();
     const searchIndex = window.location.href.lastIndexOf("?");
     const url = window.location.href.substr(0, searchIndex);
+
+    console.log("Searching for '" + tags + "'");
     
     if (tags === "") {
         if (searchIndex === -1) {
@@ -141,10 +145,6 @@ function nextOrPrev(event) {
     //console.log(event.target.firstElementChild);
     //console.log(source);
 
-    if (!source) {
-        source = target.firstElementChild.firstElementChild.src;
-        //console.log("video source: ", source);
-    }
     const filenameStart = source.lastIndexOf("/");
     const src = decodeURI(source.substr(filenameStart));
     const selector = ".image[src$='" + src + "'],.image:has(> source[src$='" + src + "'])";
@@ -189,12 +189,13 @@ function changeBigImage(elem) {
 
     const desc = elem.getAttribute("description");
     
-    const tagname = elem.tagName.toLowerCase();
-    if (tagname === "img") {
-        makeBigImage(desc, elem.src);
-    } else if (tagname === "video") {
-        makeBigImage(desc, elem.firstChild.src);
+    let source = elem.src;
+
+    if (source.substr(0, VID_START.length) === VID_START) {
+        source = source.replace(VID_START, "/image");
     }
+
+    makeBigImage(desc, source);
 
     tagText.value = elem.getAttribute("description");
 }
@@ -231,8 +232,13 @@ async function submitTags(event) {
 
     const url = new URL(src);
     const path = url.pathname;
+    let decodedPath = decodeURIComponent(path);  // for escaped spaces
 
-    const img_elem = document.querySelector('img.image[src="' + path + '"]');
+    let img_elem = document.querySelector('img.image[src="' + decodedPath + '"]');
+    if (!img_elem) {
+        console.log("cant find: ", decodedPath);
+        img_elem = document.querySelector('source[src="' + decodedPath + '"]').parentElement;
+    }
     img_elem.setAttribute("description", tags.value);
 
     return false;
@@ -257,8 +263,9 @@ function openBigImage(e) {
 
     let src = e.target.src;
     // if this is a video
-    if (src === "") {
-        src = e.target.firstElementChild.src;
+    
+    if (src.substr(0, VID_START.length) === VID_START) {
+        src = src.replace(VID_START, "/image");
     }
     const bigImage = makeBigImage(e.target.getAttribute("description"), src);
     tagText.value = e.target.getAttribute("description");
@@ -378,18 +385,24 @@ function makeImage(filename) {
         image.src = filename;
         return image;
     } else if (tag === "video") {
-        const video = document.createElement("video");
-        video.controls = "controls";
+        const image = document.createElement("img");
 
-        if (!preload_videos) {
-            video.preload = "metadata";
-        }
+        thumbpath = filename.replace("/image/", "/thumbnail/");
+        image.src = thumbpath;
+        return image;
 
-        const source = document.createElement("source");
-        source.src = filename;
-        video.appendChild(source);
+        // const video = document.createElement("video");
+        // video.controls = "controls";
 
-        return video
+        // if (!preload_videos) {
+        //     video.preload = "metadata";
+        // }
+
+        // const source = document.createElement("source");
+        // source.src = filename;
+        // video.appendChild(source);
+
+        // return video
     }
 }
 

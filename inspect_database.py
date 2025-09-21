@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 
 
-conn = sqlite3.connect("database.db")
+conn = sqlite3.connect("secrets_and_data/database_no_blob.db")
 
 cur = conn.cursor()
 
@@ -13,8 +13,7 @@ cur = conn.cursor()
 filename = "IMG_0174.PNG"
 parsed_time = 1672134585
 cur.execute(
-	"SELECT description, time FROM media WHERE filename = ? AND time = ?",
-	(filename, 1672134585)
+	"SELECT filename, time FROM media"
 )
 rows = cur.fetchall()
 pprint(rows)

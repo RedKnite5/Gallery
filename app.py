@@ -1,12 +1,12 @@
 import sqlite3
 import os
 import json
-from pprint import pprint
+from pprint import pprint, pformat
 from pathlib import Path
 import logging
 from urllib.parse import unquote
 import subprocess
-import gzip
+from functools import reduce
 
 from flask import (Flask,
 				   jsonify,
@@ -50,30 +50,118 @@ def replace_vid_extension_with_png(filename):
 			return filename[:-len(ext)] + ".png"
 	return filename
 
-def partition(lst, predicate):
-	arr1 = []
-	arr2 = []
-	for item in lst:
-		if predicate(item):
-			arr1.append(item)
+def matches(term, tags):
+	if isinstance(term, Exp):
+		return term.evaluate(tags)
+	else:
+		return term in tags
+
+class Exp:
+	op = None
+
+	def __init__(self, *args):
+		self.terms = list(args)
+	
+	def add(self, arg):
+		self.terms.append(arg)
+	
+	def evaluate(self, tags):
+		return reduce(self.op, (matches(term, tags) for term in self.terms))
+
+class And_Exp(Exp):
+	op = "and"
+
+	def evaluate(self, tags):
+		return all(matches(term, tags) for term in self.terms)
+
+class Or_Exp(Exp):
+	op = "or"
+
+	def evaluate(self, tags):
+		return any(matches(term, tags) for term in self.terms)
+
+class Not_Exp(Exp):
+	op = "not"
+
+	def evaluate(self, tags):
+		assert len(self.terms) == 1
+
+		return not matches(self.terms[0], tags)
+
+
+def tokenize_search_string(string):
+	tokens = []
+	index = 0
+	start = -1
+	while index < len(string):
+		hyphen_not_mid_word = string[index] == "-" and start == -1
+		if string[index] in "() " or hyphen_not_mid_word:
+			if start != -1:
+				tokens.append(string[start:index])
+				start = -1
+			tokens.append(string[index])
+		elif start == -1:
+			start = index
 		else:
-			arr2.append(item)
-	return (arr1, arr2)
+			pass
 
+		index += 1
+	
+	if start != -1:
+		tokens.append(string[start:])
+	
+	return tokens
 
-def matches_tags(description, pos_tags, neg_tags):
-	imageTags = description.lower().split(" ")
+def parse_search_string(string):
+	tokens = tokenize_search_string(string)
 
-	keep = all(tag in imageTags for tag in pos_tags)
-	keep = keep and all(tag[1:] not in imageTags for tag in neg_tags)
+	tree = And_Exp()
 
-	return keep
+	stack = [tree]
+	stack_index = 0
+
+	for token in tokens:
+		if token == "or":
+			exp = Or_Exp()
+			stack[stack_index].add(exp)
+			stack.append(exp)
+			stack_index += 1
+
+		elif token == "and":
+			exp = And_Exp()
+			stack[stack_index].add(exp)
+			stack.append(exp)
+			stack_index += 1
+
+		elif token == ")":
+			stack.pop()
+			stack_index -= 1
+		
+		elif token == "-":
+			exp = Not_Exp()
+			stack[stack_index].add(exp)
+			stack.append(exp)
+			stack_index += 1
+
+		# should do some kind of checking to make sure '(' is present
+		elif token in " (":
+			pass
+
+		else:
+			stack[stack_index].add(token)
+
+			if stack[stack_index].op == "not":
+				stack.pop()
+				stack_index -= 1
+
+	return tree
 
 def filter_images(images, searchString):
-	tags_all = searchString.lower().split("%20")
-	tags = [tag for tag in tags_all if tag != ""]
-	neg_tags, pos_tags = partition(tags, lambda tag: tag.startswith("-"))
-	return [image for image in images if matches_tags(image[1], pos_tags, neg_tags)]
+	tags_all = searchString.lower()
+
+	tree = parse_search_string(tags_all)
+
+	return [image for image in images if tree.evaluate(image[1].lower())]
 
 
 def get_video_len(video_path):
@@ -94,16 +182,17 @@ def get_video_len(video_path):
 
 @app.route("/thumbnail/<path:filename>")
 def thumbnail(filename):
-	logger.debug("thumbnail")
+	#logger.debug("thumbnail")
 
 	thumb_path_str = os.path.abspath(ROOT / "thumbnails" / filename)
-	thumb_path = Path(thumb_path_str)
 
 	if not thumb_path_str.startswith(str(ROOT / "thumbnails") + os.sep):
 		abort(400, "Invalid path")
 
-	if thumb_path.is_file():
-		return send_file(thumb_path, mimetype="image/jpeg")
+	thumb_path_png = Path(replace_vid_extension_with_png(thumb_path_str))
+
+	if thumb_path_png.is_file():
+		return send_file(thumb_path_png, mimetype="image/jpeg")
 
 	locations = ("images", "webp_bucket", "downloaded", "custom")
 	video_path = None
@@ -111,8 +200,11 @@ def thumbnail(filename):
 		if (candidate := ROOT / directory / filename).is_file():
 			video_path = candidate
 			break
+	
+	thumb_path = Path(thumb_path_str)
 
-	logger.debug("video path: " + str(video_path))
+	logger.debug("generating video path: " + str(video_path))
+	logger.debug("thumb path: " + str(thumb_path))
 
 	os.makedirs(ROOT / "thumbnails", exist_ok=True)
 
@@ -144,19 +236,13 @@ def thumbnail(filename):
 
 @app.route("/list-media/")
 def list_images():
+	query = request.args.get("q", "")
 	logger.debug("/list-media/")
-	logger.debug(b"search string " + request.query_string)
+	logger.debug("search string " + query)
 	res = cur.execute("SELECT filename, description FROM media ORDER BY time DESC")
 	data = res.fetchall()
 
-	filtered = filter_images(data, request.query_string.decode("utf-8"))
-
-
-	#content = gzip.compress(json.dumps(filtered).encode('utf8'), 5)
-	#response = make_response(content)
-	#response.headers['Content-length'] = len(content)
-	#response.headers['Content-Encoding'] = 'gzip'
-	#return response
+	filtered = filter_images(data, query)
 
 	return jsonify(filtered)
 

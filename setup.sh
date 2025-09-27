@@ -6,7 +6,11 @@ cd "$location"
 
 cnf_file="$(find . -name "*.cnf" -printf '%P\n')"
 filename="${cnf_file::-4}"
-cp "$cnf_file" "/etc/nginx/sites-available/$filename"
+
+# use sed to replace variables in cnf file
+# replace VAR_HOME_DIR with $location/
+sed "s:VAR_HOME_DIR:$location/:g" "$cnf_file" >"/etc/nginx/sites-available/$filename"
+
 ln -sf "/etc/nginx/sites-available/$filename" "/etc/nginx/sites-enabled/gallery"
 
 service_file="$(find . -name "*.service" -printf '%P\n')"

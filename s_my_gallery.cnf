@@ -2,6 +2,8 @@
 # belongs at
 # /etc/nginx/sites-available/my_gallery_s
 
+# netsh interface portproxy add v4tov4 listenport=3000 listenaddress=0.0.0.0 connectport=3000 connectaddress=172.22.105.82
+
 gzip on;
 gzip_proxied any;
 gzip_min_length 1000;
@@ -24,16 +26,19 @@ server {
     }
 
     location /favicon.ico {
-        root /home/veronica/Documents/gallery/;
+        root VAR_HOME_DIR;
+    }
+
+    location = /gallery {
+        return 301 /gallery/;
     }
 
     location /gallery/ {
-        #include /etc/nginx/mime.types;
-        alias /home/veronica/Documents/gallery/;
+        alias VAR_HOME_DIR;
     }
 
     location ~* ^/image/(.*) {
-        root /home/veronica/Documents/gallery/;
+        root VAR_HOME_DIR;
         try_files /images/$1 /webp_bucket/$1 /downloaded/$1 /custom/$1  =404;
     }
 

@@ -86,6 +86,10 @@ a {
   outline: none;
 }
 
+:root {
+  --button-offset: 10px;
+}
+
 #back-arrow {
     position: relative;
     z-index: 1;
@@ -98,7 +102,7 @@ a {
   display: none;
   place-items: center;
   position: absolute;
-  top: 10px;
+  top: var(--button-offset);
   left: 10px;
   width: 48px;
   height: 48px;
@@ -119,6 +123,10 @@ a {
   opacity: .3;
 }
 
+#form {
+  display: none
+}
+
 #tags {
   /*background-color: pink;*/
   margin: 0;
@@ -128,6 +136,7 @@ a {
   font-size: 20px;
   text-align: center;
   width: 100%;
+  overflow: hidden;
 }
 
 #big-image-div {

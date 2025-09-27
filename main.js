@@ -2,19 +2,23 @@
 const passwordProtected = false;  // not inteded to actually be secure
 const preload_videos = false;
 
-const video_formats = [".mov", ".mp4"];
-VID_START = "http://localhost:3000/thumbnail";
-
 window.addEventListener("load", setup);
 
+const topBar = document.getElementById("top");
+const searchbar = document.getElementById("searchbar");
+const galleryDiv = document.getElementById("gallery");
+const bigImageDiv = document.getElementById("big-image-div");
+const tagText = document.getElementById("tags");
+const tagForm = document.getElementById("form");
+const backbutton = document.getElementById("back-button");
+
 function setup() {
-    const searchbar = document.getElementById("searchbar");
     searchbar.addEventListener("keyup", search);
 
-    const tags_textarea = document.getElementById("tags");
-    tags_textarea.addEventListener("change", saveNewTags);
     tagForm.addEventListener("change", submitTags);
     tagForm.addEventListener("submit", submitTags);
+
+    backbutton.addEventListener("click", BackToGallery);
     
     setupPassword();
 }
@@ -24,7 +28,7 @@ function setupPassword() {
         const passwordInput = document.createElement("input");
         passwordInput.id = "passwordInput";
         passwordInput.type = "text";
-        passwordInput.addEventListener("keyup", checkPassword);
+        //passwordInput.addEventListener("keyup", checkPassword);
 
         const passwordLabel = document.createElement("label");
         passwordLabel.id = "passwordLabel";
@@ -43,32 +47,6 @@ function setupPassword() {
     }
 }
 
-async function checkPassword(event) {
-    if (event.key !== "Enter") {
-        return;
-    }
-
-    const passwordInput = document.getElementById("passwordInput");
-    const givenPassword = passwordInput.value;
-
-    const pepperedPassowrd = givenPassword + "\"!B[}~,w^q-NWA4aKT<J]&_hmHIN%@Br;$";
-
-    const hash = await digestMessage(pepperedPassowrd);
-
-    const correctHash = "d8f4d8d25947f0478d4cd9efc32efa46d816074c4921bf4bba8d50" +
-        "e7c8414e5ac6a3e34ac51afc65feedfe2da7c521f31667c5f4499d38b21be52a25e2266a57";
-
-    //console.log(hash);
-
-    if (hash === correctHash) {
-        //console.log("successfully logged in");
-        const passDiv = document.getElementById("passDiv");
-        passDiv.parentNode.removeChild(passDiv);
-        makeImages();
-    }
-}
-
-
 async function digestMessage(message) {
     const encoder = new TextEncoder();
     const data = encoder.encode(message);
@@ -81,16 +59,6 @@ async function digestMessage(message) {
 
     return hashHex;
 }
-
-
-const topBar = document.getElementById("top");
-const searchbar = document.getElementById("searchbar");
-const galleryDiv = document.getElementById("gallery");
-const bigImageDiv = document.getElementById("big-image-div");
-const tagText = document.getElementById("tags");
-const tagForm = document.getElementById("form");
-const backbutton = document.getElementById("back-button");
-backbutton.addEventListener("click", BackToGallery);
 
 // https://www.softcomplex.com/docs/get_window_size_and_scrollbar_position.html
 function f_filterResults(n_win, n_docel, n_body) {
@@ -107,6 +75,22 @@ function f_scrollTop() {
 	);
 }
 
+function is_video_file(filename) {
+    const video_formats = [".mov", ".mp4"];
+    for (const format of video_formats) {
+        if (filename.endsWith(format)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function prep_source_for_selector(source) {
+    const filenameStart = source.lastIndexOf("/");
+    const filename = source.substring(filenameStart)
+    const src = decodeURI(filename);
+    return CSS.escape(src);
+}
 
 function search(event) {
     if (event.key !== "Enter") {
@@ -115,7 +99,7 @@ function search(event) {
 
     const tags = searchbar.value.toLowerCase();
     const searchIndex = window.location.href.lastIndexOf("?");
-    const url = window.location.href.substr(0, searchIndex);
+    const url = window.location.href.substring(0, searchIndex);
 
     console.log("Searching for '" + tags + "'");
     
@@ -126,35 +110,65 @@ function search(event) {
         window.location = url;
         return;
     }
-    window.location = url + "?" + tags;
+    window.location = url + "?q=" + tags;
+}
+
+function should_switch_image(x, y) {
+    const buffer = 10;
+    const back_arrow_size = 48 + buffer;
+
+    // don't register clicks near top of screen because of
+    // full screen button on videos
+    if (y < back_arrow_size) {
+        return false;
+    }
+
+    // don't switch if clicked too close to back button
+    const currentTop = parseInt(window.getComputedStyle(backbutton).top, 10);
+    const y_bottom = back_arrow_size + currentTop;
+    if (x < back_arrow_size && y < y_bottom) {
+        return false;
+    }
+
+    const width = window.innerWidth;
+    if (x > width / 3 && x < width * 2 / 3) {
+        return false;
+    }
+
+    return true;
 }
 
 function nextOrPrev(event) {
-    const width = event.target.offsetWidth;  // reflow
+
+    if (!should_switch_image(event.clientX, event.clientY)) {
+        return;
+    }
 
     let target = event.target;
-    if (event.target.id === "full-image") {
-        target = event.target.parentElement;
+    if (target.id !== "full-image") {
+        target = target.firstElementChild;
     }
 
     // used to get gallery version of current image
     //console.log("nextorprev start target: ", event.target);
-    let source = target.firstElementChild.src;
+    const source = target.src;
     //console.log("nextorprev end target: ", event.target.firstElementChild);
     //console.log(event.target);
     //console.log(event.target.firstElementChild);
     //console.log(source);
 
-    const filenameStart = source.lastIndexOf("/");
-    const src = decodeURI(source.substr(filenameStart));
-    const selector = ".image[src$='" + src + "'],.image:has(> source[src$='" + src + "'])";
+    const escapedSrc = prep_source_for_selector(source);
+    const selector = ".image[src$='" + escapedSrc + "'],.image:has(> source[src$='" + escapedSrc + "'])";
     //console.log("target: ", event.target);
     //console.log("selector: ", selector);
-    
+
+    const width = window.innerWidth;
     let elem = null;
     if (event.clientX < width/3) {
+        // console.log("x: ", event.clientX);
+        // console.log("y: ", event.clientY);
         elem = document.querySelector(selector).previousElementSibling;
-    } else if (event.clientX > width * 2/3) {
+    } else { // if (event.clientX > width * 2/3) {
         elem = document.querySelector(selector).nextElementSibling;
     }
 
@@ -167,8 +181,8 @@ function keyDown(event) {
     //console.log("pressed: ", event.key);
 
     const bigImage = document.getElementById("full-image");
-    const filenameStart = bigImage.src.lastIndexOf("/");
-    const selector = ".image[src$='" + decodeURI(bigImage.src.substr(filenameStart)) + "']";
+    const escapedSrc = prep_source_for_selector(bigImage.src);
+    const selector = ".image[src$='" + escapedSrc + "']";
     const image = document.querySelector(selector);
     if (event.key === "ArrowLeft") {
         changeBigImage(image.previousElementSibling);
@@ -191,23 +205,12 @@ function changeBigImage(elem) {
     
     let source = elem.src;
 
-    if (source.substr(0, VID_START.length) === VID_START) {
-        source = source.replace(VID_START, "/image");
-    }
+    const filenameStart = source.lastIndexOf("/");
+    const src = "/image" + source.substring(filenameStart);
 
-    makeBigImage(desc, source);
+    makeBigImage(desc, src);
 
     tagText.value = elem.getAttribute("description");
-}
-
-function saveNewTags(event) {
-    tagText.style.height = "";
-    tagText.style.height = tagText.scrollHeight + "px";
-
-    const form = document.getElementById("form");
-    //form.requestSubmit();
-    console.log("submitted");
-    console.log(form)
 }
 
 async function submitTags(event) {
@@ -230,23 +233,36 @@ async function submitTags(event) {
         body: JSON.stringify({tags: tags.value, name: src})
     });
 
-    const url = new URL(src);
-    const path = url.pathname;
-    let decodedPath = decodeURIComponent(path);  // for escaped spaces
+    const escapedPath = prep_source_for_selector(src);
 
-    let img_elem = document.querySelector('img.image[src="' + decodedPath + '"]');
-    if (!img_elem) {
-        console.log("cant find: ", decodedPath);
-        img_elem = document.querySelector('source[src="' + decodedPath + '"]').parentElement;
+    let img_elem = null;
+    if (is_video_file(src)) {
+        const thumbpath = CSS.escape("/thumbnail") + escapedPath;
+        
+        img_elem = document.querySelector(`img.image[src=${thumbpath}]`)
+
+        // console.log(`thumbpath:   '${thumbpath}'`);
+        // console.log(`escapedPath: '${escapedPath}'`);
+    } else {
+        const path_sel = CSS.escape("/image") + escapedPath;
+        img_elem = document.querySelector(`img.image[src=${path_sel}]`);
     }
+
+    if (!img_elem) {
+        console.log(`cant find: '${escapedPath}'`);
+    }
+
     img_elem.setAttribute("description", tags.value);
+
+    tagText.style.height = "";
+    tagText.style.height = tagText.scrollHeight + "px";
 
     return false;
 }
 
 function BackToGallery() {
     galleryDiv.style.display = "block";
-    topBar.style.display = "block";
+    topBar.style.display = "flex";
     const box = document.getElementById("full-image");
     box.removeEventListener("keydown", keyDown);
     box.parentNode.removeChild(box);
@@ -257,22 +273,22 @@ function BackToGallery() {
 }
 
 function openBigImage(e) {
-    console.log("openbigimage source: " + e.target.src);
+    //console.log("openbigimage source: " + e.target.src);
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
 
     let src = e.target.src;
     // if this is a video
     
-    if (src.substr(0, VID_START.length) === VID_START) {
-        src = src.replace(VID_START, "/image");
-    }
+    const filenameStart = src.lastIndexOf("/");
+    src = "/image" + src.substring(filenameStart);
+
     const bigImage = makeBigImage(e.target.getAttribute("description"), src);
     tagText.value = e.target.getAttribute("description");
 }
 
 function makeBigImage(description, source) {
-    const form = document.createElement("form");
+    //const form = document.createElement("form");
 
     tagText.innerHTML = description;
     tagForm.style.display = "block";
@@ -291,25 +307,24 @@ function makeBigImage(description, source) {
 
     bigImageDiv.appendChild(bigImage);
 
+    const root = document.documentElement;
+    const css_top = getComputedStyle(root).getPropertyValue("--button-top").trim();
+    if (is_video_file(source)) {
+        // Shift it down
+        backbutton.style.top = `${css_top + 32}px`;
+    } else {
+        backbutton.style.top = css_top
+    }
+
+
     bigImage.focus();
     return bigImage;
 }
 
 function makeBigImageElement(source) {
-    console.log("makebigimageelement source: " + source);
+    //console.log("makebigimageelement source: " + source);
 
-    let tag = "img";
-    for (const format of video_formats) {
-        if (source.endsWith(format)) {
-            tag = "video";
-        }
-    }
-
-    if (tag === "img") {
-        const image = document.createElement("img");
-        image.src = source;
-        return image;
-    } else if (tag === "video") {
+    if (is_video_file(source)) {
         const video = document.createElement("video");
         video.controls = "controls";
 
@@ -319,8 +334,11 @@ function makeBigImageElement(source) {
 
         return video
     }
-}
 
+    const image = document.createElement("img");
+    image.src = source;
+    return image;
+}
 
 function makeInSteps(images) {
     //const searchString = window.location.search.substring(1);
@@ -371,38 +389,16 @@ function makeImages() {
         });
 }
 
-
 function makeImage(filename) {
-    let tag = "img";
-    for (const format of video_formats) {
-        if (filename.endsWith(format)) {
-            tag = "video";
-        }
-    }
+    const image = document.createElement("img");
 
-    if (tag === "img") {
-        const image = document.createElement("img");
-        image.src = filename;
-        return image;
-    } else if (tag === "video") {
-        const image = document.createElement("img");
-
+    if (is_video_file(filename)) {
         thumbpath = filename.replace("/image/", "/thumbnail/");
         image.src = thumbpath;
-        return image;
-
-        // const video = document.createElement("video");
-        // video.controls = "controls";
-
-        // if (!preload_videos) {
-        //     video.preload = "metadata";
-        // }
-
-        // const source = document.createElement("source");
-        // source.src = filename;
-        // video.appendChild(source);
-
-        // return video
+    } else {
+        image.src = filename;
     }
+
+    return image;
 }
 

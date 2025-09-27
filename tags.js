@@ -16,16 +16,19 @@ function makeTags() {
                 }
             }
 
-            for (const item of tags) {
+            tag_array = Array.from(tags)
+            tag_array.sort()
+
+            for (const item of tag_array) {
                 if (item === "") {
                     continue;
                 }
 
                 const END = 9; // "tags.html".length
                 const urlLength = window.location.href.length;
-                const url = window.location.href.substr(0, urlLength - END);
+                const url = window.location.href.substring(0, urlLength - END);
 
-                const newUrl = url + "?" + item;
+                const newUrl = url + "?q=" + item;
 
                 const tag = document.createElement("a");
                 tag.className = "rounded-box tag";

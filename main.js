@@ -2,6 +2,11 @@
 const passwordProtected = false;  // not inteded to actually be secure
 const preload_videos = false;
 
+(function() {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+})();
+
 window.addEventListener("load", setup);
 
 const topBar = document.getElementById("top");
@@ -12,6 +17,7 @@ const tagText = document.getElementById("tags");
 const tagForm = document.getElementById("form");
 const backbutton = document.getElementById("back-button");
 
+
 function setup() {
     searchbar.addEventListener("keyup", search);
 
@@ -19,32 +25,30 @@ function setup() {
     tagForm.addEventListener("submit", submitTags);
 
     backbutton.addEventListener("click", BackToGallery);
-    
-    setupPassword();
-}
 
-function setupPassword() {
-    if (passwordProtected === true) {
-        const passwordInput = document.createElement("input");
-        passwordInput.id = "passwordInput";
-        passwordInput.type = "text";
-        //passwordInput.addEventListener("keyup", checkPassword);
+    const clear_search_button = document.getElementById("clear-search-button-container");
+    clear_search_button.addEventListener("click", clear_search);
 
-        const passwordLabel = document.createElement("label");
-        passwordLabel.id = "passwordLabel";
-        passwordLabel.for = "passwordInput";
-        passwordLabel.innerText = "Password";
+    const checkbox = document.getElementById("darkmode-checkbox");
+    checkbox.addEventListener("change", dark_mode_toggle);
 
-        const passDiv = document.createElement("div");
-        passDiv.id = "passDiv";
+    const sort_select = document.getElementById("sort-select-dropdown");
+    sort_select.addEventListener("change", change_sorting);
 
-        passDiv.appendChild(passwordLabel);
-        passDiv.appendChild(passwordInput);
+    sort_select.value = localStorage.getItem("sort_order") || "new";
 
-        document.body.appendChild(passDiv);
+    const theme = localStorage.getItem("theme") || "light";
+    if (theme === "light") {
+        checkbox.checked = false;
     } else {
-        makeImages();
+        checkbox.checked = true;
     }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    searchbar.value = urlParams.get("q");
+
+    
+    makeImages();
 }
 
 async function digestMessage(message) {
@@ -92,25 +96,52 @@ function prep_source_for_selector(source) {
     return CSS.escape(src);
 }
 
+function get_search_string_from_url() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("q");
+}
+
+function dark_mode_toggle(event) {
+    let theme = "light";
+    if (event.currentTarget.checked) {
+        theme = "dark";
+    }
+
+    localStorage.setItem("theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+}
+
+function change_sorting(event) {
+    localStorage.setItem("sort_order", event.target.value);
+}
+
 function search(event) {
     if (event.key !== "Enter") {
         return;
     }
 
     const tags = searchbar.value.toLowerCase();
-    const searchIndex = window.location.href.lastIndexOf("?");
-    const url = window.location.href.substring(0, searchIndex);
+    // if previous search contains a '?' then the next search wont work
+    // const searchIndex = window.location.href.lastIndexOf("?");
+    // const url = window.location.href.substring(0, searchIndex);
+    const location = window.location;
+    const url = location.origin + location.pathname;
 
     console.log("Searching for '" + tags + "'");
     
     if (tags === "") {
-        if (searchIndex === -1) {
-            return;
-        }
+        //
+        // if (searchIndex === -1) {
+        //     return;
+        // }
         window.location = url;
         return;
     }
     window.location = url + "?q=" + tags;
+}
+
+function clear_search(event) {
+    searchbar.value = "";
 }
 
 function should_switch_image(x, y) {
@@ -199,6 +230,12 @@ function changeBigImage(elem) {
     //console.log("Changing to: ", elem);
 
     const box = document.getElementById("full-image");
+    if (box.nodeName === "VIDEO") {
+        box.pause();
+        box.removeAttribute('src');
+        box.load();
+    }
+
     box.parentNode.removeChild(box);
 
     const desc = elem.getAttribute("description");
@@ -268,6 +305,8 @@ function BackToGallery() {
     box.parentNode.removeChild(box);
     tagForm.style.display = "none";
     backbutton.style.display = "none";
+    const footer = document.getElementById("footer");
+    footer.style.display = "block";
     const yscroll = document.body.getAttribute("previous_y_scroll_location");
     window.scrollTo(0, yscroll);
 }
@@ -276,6 +315,9 @@ function openBigImage(e) {
     //console.log("openbigimage source: " + e.target.src);
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
+
+    const footer = document.getElementById("footer");
+    footer.style.display = "none";
 
     let src = e.target.src;
     // if this is a video
@@ -342,6 +384,14 @@ function makeBigImageElement(source) {
 
 function makeInSteps(images) {
     //const searchString = window.location.search.substring(1);
+    //console.log(images)
+
+    const sort_select = document.getElementById("sort-select-dropdown");
+    console.log(sort_select.value)
+    if (sort_select.value === "old") {
+        images.reverse();
+    }
+    
     const len = images.length;
     const STEP_SIZE = 40;
     for (let i=0; i*STEP_SIZE < len; i++) {

@@ -14,9 +14,9 @@ sed "s:VAR_HOME_DIR:$location/:g" "$cnf_file" >"/etc/nginx/sites-available/$file
 ln -sf "/etc/nginx/sites-available/$filename" "/etc/nginx/sites-enabled/gallery"
 
 service_file="$(find . -name "*.service" -printf '%P\n')"
-service_filename="${service_file::-8}"
 
-cp "$service_file" "/etc/systemd/system/gallery.service"
+sed "s:VAR_HOME_DIR:$location/:g" "$service_file" >"/etc/systemd/system/gallery.service"
+
 systemctl daemon-reload
 systemctl stop gallery
 systemctl start gallery

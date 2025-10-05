@@ -3,15 +3,30 @@
 <head>
     <title>Gallery Tags</title>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="./tags.css">
     <script src="tags.js" async></script>
+    <link rel="stylesheet" href="./general.css">
+    <link rel="stylesheet" href="./tags.css">
 </head>
 
 <body>
 
-<p class="logo">
-    <a href="/gallery/">My Gallery</a>
-</p>
+<div id="top" class="top-bar">
+    <p class="title">
+        <a href="/gallery/">My Gallery</a>
+    </p>
+
+    <div class="flexgrow"></div>
+
+    <label class="switch">
+        <input type="checkbox" id="darkmode-checkbox">
+        <span class="slider round">
+            <img src="sun-outline.svg" alt="sun" class="icon sun">
+            <img src="moon-outline.svg" alt="moon" class="icon moon">
+        </span>
+    </label>
+    <a class="box-link" href="tags.html">Tags</a>
+</div>
+
 <p id="tag-title" text-align="center">
 Tags
 </p>

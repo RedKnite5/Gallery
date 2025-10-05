@@ -4,21 +4,6 @@ a {
     text-decoration: none;
 }
 
-.top-bar {
-    height: 8vh;
-    background-color: "blue";
-    display: flex;
-}
-
-.logo {
-    height: 6vh;
-    font-size: 5vh;
-    margin: 0px;
-    padding-left: 10px;
-    padding-right: 10px;
-    display: inline-block;
-  }
-
 #tag-title {
     height: 6vh;
     font-size: 5vh;

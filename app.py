@@ -54,17 +54,22 @@ def matches(term, tags):
 	if isinstance(term, Exp):
 		return term.evaluate(tags)
 	else:
-		return term in tags
+		# logger.debug(f"{term = }")
+		# logger.debug(f"{tags.split() = }")
+		return term in tags.split()
 
 class Exp:
 	op = None
 
 	def __init__(self, *args):
 		self.terms = list(args)
-	
+
+	def __str__(self):
+		return f"{self.op}({', '.join(map(str, self.terms))})"
+
 	def add(self, arg):
 		self.terms.append(arg)
-	
+
 	def evaluate(self, tags):
 		return reduce(self.op, (matches(term, tags) for term in self.terms))
 
@@ -116,43 +121,41 @@ def parse_search_string(string):
 	tokens = tokenize_search_string(string)
 
 	tree = And_Exp()
-
 	stack = [tree]
-	stack_index = 0
 
 	for token in tokens:
 		if token == "or":
 			exp = Or_Exp()
-			stack[stack_index].add(exp)
+			stack[-1].add(exp)
 			stack.append(exp)
-			stack_index += 1
 
 		elif token == "and":
 			exp = And_Exp()
-			stack[stack_index].add(exp)
+			stack[-1].add(exp)
 			stack.append(exp)
-			stack_index += 1
 
 		elif token == ")":
-			stack.pop()
-			stack_index -= 1
-		
+			if len(stack) >= 2:
+				stack.pop()
+			else:
+				# error
+				# ignore it?
+				pass
+
 		elif token == "-":
 			exp = Not_Exp()
-			stack[stack_index].add(exp)
+			stack[-1].add(exp)
 			stack.append(exp)
-			stack_index += 1
 
 		# should do some kind of checking to make sure '(' is present
 		elif token in " (":
 			pass
 
 		else:
-			stack[stack_index].add(token)
+			stack[-1].add(token)
 
-			if stack[stack_index].op == "not":
+			if stack[-1].op == "not":
 				stack.pop()
-				stack_index -= 1
 
 	return tree
 
@@ -160,6 +163,7 @@ def filter_images(images, searchString):
 	tags_all = searchString.lower()
 
 	tree = parse_search_string(tags_all)
+	# logger.debug(str(tree))
 
 	return [image for image in images if tree.evaluate(image[1].lower())]
 

@@ -4,24 +4,57 @@
     <title>Gallery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="./gallery.css">
+    
     <script src="main.js" async></script>
+    <link rel="stylesheet" href="./general.css">
+    <link rel="stylesheet" href="./gallery.css">
 </head>
 
 <body>
+<div class="footer-container">
+<div class="content-wrapper">
+
 <div id="top" class="top-bar">
     <p class="title">
         <a href="/gallery/">My Gallery</a>
     </p>
-    <input type="text" id="searchbar" placeholder="Search..">
+    
+    <div class="searchbar-wrapper flexgrow">
+        <input type="text" id="searchbar" placeholder="Search..">
+
+        <div class="clear-search-button-container" id="clear-search-button-container">
+            <div class="circle"></div>
+
+            <svg width="50px" height="50px" viewBox="0 0 24 24" fill="none"
+                class="clear-search-button">
+                <path d="M20 20L4 4.00003M20 4L4.00002 20"
+                    stroke="#000000"
+                    stroke-width="2"
+                    stroke-linecap="round"/>
+            </svg>
+        </div>
+    </div>
+    
+    <select class="sort-select" id="sort-select-dropdown">
+        <option value="new">Newest First</option>
+        <option value="old">Oldest First</option>
+    </select>
+
+    <label class="switch">
+        <input type="checkbox" id="darkmode-checkbox">
+        <span class="slider round">
+            <img src="sun-outline.svg" alt="sun" class="icon sun">
+            <img src="moon-outline.svg" alt="moon" class="icon moon">
+        </span>
+    </label>
     <a class="box-link" href="tags.html">Tags</a>
 </div>
 
-<div class="circle-container" id="back-button">
+<div class="circle-container hidden" id="back-button">
     <div class="circle"></div>
+    <!-- License: MIT. Made by Jackhenry Design: https://github.com/Banno/jha-design -->
     <svg id="back-arrow" viewBox="0 0 24 24">
-        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z">
-        </path>
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
     </svg>
 </div>
 
@@ -37,6 +70,12 @@
     </input>
 </form>
 
+</div>
+
+<footer id="footer">
+    <a href="https://www.svgrepo.com/svg/416093/basic-outline-sun" class="footer-link">Sun Icon</a> by Rudez Studio
+</footer>
+</div>
 
 </body>
 </html>

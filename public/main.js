@@ -185,8 +185,8 @@ function clear_search(event) {
 async function logout(event) {
     await fetch("/logout/", {
         method: "POST",
-        credentials: "include",
         headers: {
+            "credentials": "include",
             "X-CSRFToken": getCSRF()
         }
     });
@@ -382,6 +382,7 @@ async function on_click_image(e) {
 
         await fetch(delete_url,
             headers = {
+                "credentials": "include",
                 "X-CSRFToken": getCSRF()
             }
         );

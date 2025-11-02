@@ -15,11 +15,10 @@ body {
 }
 
 .footer-container {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    min-height: -webkit-fill-available;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  justify-content: space-between;
 }
 
 .title {
@@ -55,13 +54,25 @@ body {
 }
 
 
+#logout-button {
+  font-style: bold;
+  font-size: 1.5em;
+  color: #56aef6;
+  margin-right: .5em;
+}
+
+#logout-button:hover {
+  cursor: pointer;
+}
+
+
  /* The switch - the box around the slider */
 .switch {
   position: relative;
   display: inline-block;
   width: 60px;
   height: 34px;
-  margin-right: 10px;
+  margin-right: .5em;
 }
 
 /* Hide default HTML checkbox */
@@ -123,6 +134,14 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
+.slider {
+  opacity: 0;
+}
+
+.slider.ready {
+  opacity: 1;
+}
+
 .icon {
   width: 16px;
   height: 16px;
@@ -150,3 +169,12 @@ input:checked + .slider:before {
 .footer-link:hover {
   color: white;
 }
+
+
+.disable-transitions .slider::before  {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}
+

@@ -17,6 +17,19 @@ server {
     server_name MyGallery.net;
 
     add_header Content-Security-Policy "default-src 'self';";
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()";
+
+
+    location = /auth {
+        internal;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+    }
 
     location / {
         root /var/www/html;
@@ -24,7 +37,7 @@ server {
     }
 
     location /favicon.ico {
-        root VAR_HOME_DIR;
+        root VAR_HOME_DIR/public/;
     }
 
     location = /gallery {
@@ -32,27 +45,48 @@ server {
     }
 
     location /gallery/ {
-        alias VAR_HOME_DIR;
+        alias VAR_HOME_DIR/public/;
     }
 
     location ~* ^/image/(.*) {
+        auth_request /auth;
         root VAR_HOME_DIR;
         try_files /images/$1 /webp_bucket/$1 /downloaded/$1 /custom/$1  =404;
     }
 
     location /gallery/list-media/ {
+        auth_request /auth;
         include proxy_params;
         proxy_pass http://127.0.0.1:8000/list-media/;
     }
 
     location /saving/ {
+        auth_request /auth;
         include proxy_params;
         proxy_pass http://127.0.0.1:8000/saving/;
     }
 
+    location /delete/ {
+        auth_request /auth;
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000/delete/;
+    }
+
     location /thumbnail/ {
+        auth_request /auth;
         include proxy_params;
         proxy_pass http://127.0.0.1:8000;
+    }
+
+    location /login/ {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000/login/;
+    }
+
+    location /logout/ {
+        auth_request /auth;
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000/logout/;
     }
 }
 

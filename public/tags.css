@@ -1,4 +1,19 @@
 
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --fg: #000000;
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --fg: #ffffff;
+}
+
+
+body {
+    background-color: var(--bg);
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -7,6 +22,7 @@ a {
 #tag-title {
     height: 6vh;
     font-size: 5vh;
+    color: var(--fg);
     margin: 0px;
     padding-left: 10px;
     padding-right: 10px;

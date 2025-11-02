@@ -7,16 +7,17 @@ import logging
 from urllib.parse import unquote
 import subprocess
 from functools import reduce
+import shutil
+import hashlib
 
 from flask import (Flask,
 				   jsonify,
 				   request,
-				   make_response,
-				   json,
-				   Response,
+				   session,
 				   abort,
 				   send_file)
 
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 
 
@@ -39,10 +40,12 @@ video_formats = (".mov", ".mp4")
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename=ROOT / "app.log", level=logging.DEBUG)
 
-conn = sqlite3.connect(ROOT / "secrets_and_data/database_no_blob.db")
-cur = conn.cursor()
+database = ROOT / "secrets_and_data/database_no_blob.db"
 
 app = Flask(__name__)
+app.secret_key = "N:ZZNqouT.Fq]Knj1RkU6Rnm97784z2L@CEnGon59-y@}~5Pc#,g+Ue!%fv,XNWo!QK,^jb3Z44ma~}k58Q+Tp^71*Z>CfK}pmx9"
+csrf = CSRFProtect(app)
+
 
 def replace_vid_extension_with_png(filename):
 	for ext in video_formats:
@@ -184,6 +187,19 @@ def get_video_len(video_path):
 		check=True
 	).stdout
 
+
+@app.after_request
+def set_csrf_cookie(response):
+    response.set_cookie(
+        "csrf_token",               # cookie name your JS will read
+        generate_csrf(),
+        secure=False,
+        samesite="Strict",
+        httponly=False
+    )
+    return response
+
+
 @app.route("/thumbnail/<path:filename>")
 def thumbnail(filename):
 	#logger.debug("thumbnail")
@@ -243,8 +259,10 @@ def list_images():
 	query = request.args.get("q", "")
 	logger.debug("/list-media/")
 	logger.debug("search string " + query)
-	res = cur.execute("SELECT filename, description FROM media ORDER BY time DESC")
-	data = res.fetchall()
+	with sqlite3.connect(database) as conn:
+		res = conn.execute("SELECT filename, description FROM media ORDER BY time DESC")
+		data = res.fetchall()
+	conn.close()
 
 	filtered = filter_images(data, query)
 
@@ -261,11 +279,11 @@ def save_tags():
 	file_encoded = name.split("/")[-1]
 	file = unquote(file_encoded)
 
-	res = cur.execute("SELECT description FROM media WHERE filename = ?", (file,))
-	data = res.fetchall()
-	cur.execute("UPDATE media SET description = ? WHERE filename = ?", (tags, file))
-
-	conn.commit()
+	with sqlite3.connect(database) as conn:
+		res = conn.execute("SELECT description FROM media WHERE filename = ?", (file,))
+		data = res.fetchall()
+		conn.execute("UPDATE media SET description = ? WHERE filename = ?", (tags, file))
+	conn.close()
 
 	logger.debug("data: %s", data)
 	logger.info(f"updating {file} from {data[0][0]!r} to {tags!r}")
@@ -273,7 +291,57 @@ def save_tags():
 
 	return "200"
 
+@app.route("/delete/<path:filename>")
+def delete(filename):
+	logger.info(f"delete request: {filename}")
 
+	with sqlite3.connect(database) as conn:
+		res = conn.execute("SELECT time, description FROM media WHERE filename = ?", (filename,))
+		time, description = res.fetchone()
+		logger.info(f"deleting {filename=} {time=} {description=}")
+		conn.execute("DELETE FROM media WHERE filename = ?", (filename,))
+	conn.close()
+
+	shutil.move(f"images/{filename}", "deleted")
+
+	return "200"
+
+@app.route("/auth")
+def auth():
+    if "user" not in session:
+        abort(401)
+    return "", 200
+
+@app.route("/login/", methods=["POST"])
+@csrf.exempt
+def login():
+	data = request.json
+	logger.debug("login")
+
+	salt1 = bytes.fromhex("13ea68762a32b9937f35d7ddf4333fef")
+	salt2 = bytes.fromhex("f25022f9a919973fa3c24f12e544d3ed")
+	password = salt1 + data["password"].encode("utf-8") + salt2
+
+	hash = hashlib.sha256(password).hexdigest()
+
+	correct_hash = "5697e7b0d85db902dd75b531e055a831a2907e230f213b50e3f98598c26db859"
+	if data["username"] == "veronica" and hash == correct_hash:
+		session["user"] = data["username"]
+		return "200"
+
+	return "403"
+
+@app.route("/logout/", methods=["POST"])
+def logout():
+	logger.debug("logout")
+	session.clear()
+	return "200"
+
+app.config.update(
+    #SESSION_COOKIE_SECURE=True,
+    #SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax'
+)
 
 if __name__ == "__main__":
 	app.run(debug=True, host="0.0.0.0")

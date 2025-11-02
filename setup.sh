@@ -17,6 +17,9 @@ service_file="$(find . -name "*.service" -printf '%P\n')"
 
 sed "s:VAR_HOME_DIR:$location/:g" "$service_file" >"/etc/systemd/system/gallery.service"
 
+
+
+
 systemctl daemon-reload
 systemctl stop gallery
 systemctl start gallery

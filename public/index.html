@@ -12,7 +12,7 @@
 
 <body>
 <div class="footer-container">
-<div class="content-wrapper">
+<div id="content-wrapper-div" class="content-wrapper">
 
 <div id="top" class="top-bar">
     <p class="title">
@@ -35,18 +35,26 @@
         </div>
     </div>
     
+    <label for="sort-select-dropdown" class="visuallyhidden">Sort Images Options</label>
     <select class="sort-select" id="sort-select-dropdown">
         <option value="new">Newest First</option>
         <option value="old">Oldest First</option>
     </select>
 
-    <label class="switch">
+    <button id="delete-button">
+        Delete mode
+    </button>
+
+    <span id="logout-button">logout</span>
+
+    <label class="switch" id="darkmode-container">
         <input type="checkbox" id="darkmode-checkbox">
-        <span class="slider round">
+        <span class="slider round" id="darkmode-slider">
             <img src="sun-outline.svg" alt="sun" class="icon sun">
             <img src="moon-outline.svg" alt="moon" class="icon moon">
         </span>
     </label>
+
     <a class="box-link" href="tags.html">Tags</a>
 </div>
 
@@ -59,6 +67,9 @@
 </div>
 
 <div id="gallery">
+    <div id="gallery_col_1" class="gallery-col"></div>
+    <div id="gallery_col_2" class="gallery-col"></div>
+    <div id="gallery_col_3" class="gallery-col"></div>
 </div>
 
 <div id="big-image-div">

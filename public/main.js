@@ -1,10 +1,27 @@
 
-const passwordProtected = false;  // not inteded to actually be secure
 const preload_videos = false;
 
+let delete_mode = false;
+
+const checkbox = document.getElementById("darkmode-checkbox");
+
 (function() {
-      const theme = localStorage.getItem("theme") || "light";
-      document.documentElement.setAttribute("data-theme", theme);
+    const theme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", theme);
+
+    document.body.classList.add("disable-transitions");
+
+    if (theme === "light") {
+        checkbox.checked = false;
+    } else {
+        checkbox.checked = true;
+    }
+
+    requestAnimationFrame(() => {
+        document.body.classList.remove("disable-transitions");
+    });
+    const slider = document.getElementById("darkmode-slider");
+    slider.classList.add("ready");
 })();
 
 window.addEventListener("load", setup);
@@ -16,6 +33,7 @@ const bigImageDiv = document.getElementById("big-image-div");
 const tagText = document.getElementById("tags");
 const tagForm = document.getElementById("form");
 const backbutton = document.getElementById("back-button");
+const deleteButton = document.getElementById("delete-button");
 
 
 function setup() {
@@ -29,7 +47,6 @@ function setup() {
     const clear_search_button = document.getElementById("clear-search-button-container");
     clear_search_button.addEventListener("click", clear_search);
 
-    const checkbox = document.getElementById("darkmode-checkbox");
     checkbox.addEventListener("change", dark_mode_toggle);
 
     const sort_select = document.getElementById("sort-select-dropdown");
@@ -37,17 +54,14 @@ function setup() {
 
     sort_select.value = localStorage.getItem("sort_order") || "new";
 
-    const theme = localStorage.getItem("theme") || "light";
-    if (theme === "light") {
-        checkbox.checked = false;
-    } else {
-        checkbox.checked = true;
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
     searchbar.value = urlParams.get("q");
 
-    
+    deleteButton.addEventListener("click", enable_delete_selection);
+
+    const logoutButton = document.getElementById("logout-button");
+    logoutButton.addEventListener("click", logout);
+
     makeImages();
 }
 
@@ -77,6 +91,16 @@ function f_scrollTop() {
 		document.documentElement ? document.documentElement.scrollTop : 0,
 		document.body ? document.body.scrollTop : 0
 	);
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function getCSRF() {
+    return getCookie("csrf_token");
 }
 
 function is_video_file(filename) {
@@ -115,6 +139,20 @@ function change_sorting(event) {
     localStorage.setItem("sort_order", event.target.value);
 }
 
+function enable_delete_selection(event) {
+    if (delete_mode) {
+        deleteButton.classList.remove("red-outline");
+        galleryDiv.classList.remove("red-outline");
+        deleteButton.textContent = "delete mode"
+    } else {
+        // red outline
+        deleteButton.classList.add("red-outline");
+        galleryDiv.classList.add("red-outline");
+        deleteButton.textContent = "view mode"
+    }
+    delete_mode = !delete_mode;
+}
+
 function search(event) {
     if (event.key !== "Enter") {
         return;
@@ -127,7 +165,7 @@ function search(event) {
     const location = window.location;
     const url = location.origin + location.pathname;
 
-    console.log("Searching for '" + tags + "'");
+    // console.log("Searching for '" + tags + "'");
     
     if (tags === "") {
         //
@@ -142,6 +180,23 @@ function search(event) {
 
 function clear_search(event) {
     searchbar.value = "";
+}
+
+async function logout(event) {
+    await fetch("/logout/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "X-CSRFToken": getCSRF()
+        }
+    });
+
+    window.location.href = "login.html";
+}
+
+function make_bigger(event) {
+    const fullImage = document.getElementById("full-image");
+    fullImage.classList.add("full-size");
 }
 
 function should_switch_image(x, y) {
@@ -170,7 +225,6 @@ function should_switch_image(x, y) {
 }
 
 function nextOrPrev(event) {
-
     if (!should_switch_image(event.clientX, event.clientY)) {
         return;
     }
@@ -183,34 +237,30 @@ function nextOrPrev(event) {
     // used to get gallery version of current image
     //console.log("nextorprev start target: ", event.target);
     const source = target.src;
-    //console.log("nextorprev end target: ", event.target.firstElementChild);
-    //console.log(event.target);
-    //console.log(event.target.firstElementChild);
-    //console.log(source);
 
     const escapedSrc = prep_source_for_selector(source);
     const selector = ".image[src$='" + escapedSrc + "'],.image:has(> source[src$='" + escapedSrc + "'])";
     //console.log("target: ", event.target);
     //console.log("selector: ", selector);
 
+    let elem = document.querySelector(selector);
+    const num = Number(elem.id.slice("image_id_".length));
+
     const width = window.innerWidth;
-    let elem = null;
+    let next_elem = null;
     if (event.clientX < width/3) {
-        // console.log("x: ", event.clientX);
-        // console.log("y: ", event.clientY);
-        elem = document.querySelector(selector).previousElementSibling;
+        let prev_id = "image_id_" + (num - 1).toString();
+        next_elem = document.getElementById(prev_id);
     } else { // if (event.clientX > width * 2/3) {
-        elem = document.querySelector(selector).nextElementSibling;
+        let next_id = "image_id_" + (num + 1).toString();
+        next_elem = document.getElementById(next_id);
     }
 
-    //console.log("selected: ", elem);
 
-    changeBigImage(elem);
+    changeBigImage(next_elem);
 }
 
 function keyDown(event) {
-    //console.log("pressed: ", event.key);
-
     const bigImage = document.getElementById("full-image");
     const escapedSrc = prep_source_for_selector(bigImage.src);
     const selector = ".image[src$='" + escapedSrc + "']";
@@ -261,11 +311,13 @@ async function submitTags(event) {
     }
     
     console.log("submitting: ", tags.value);
-    await fetch("/saving/", {
+    const promise = fetch("/saving/", {
         method: "POST",
         headers: {
             "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "credentials": "include",
+            "X-CSRFToken": getCSRF()
         },
         body: JSON.stringify({tags: tags.value, name: src})
     });
@@ -289,6 +341,8 @@ async function submitTags(event) {
         console.log(`cant find: '${escapedPath}'`);
     }
 
+    await promise;
+
     img_elem.setAttribute("description", tags.value);
 
     tagText.style.height = "";
@@ -298,7 +352,7 @@ async function submitTags(event) {
 }
 
 function BackToGallery() {
-    galleryDiv.style.display = "block";
+    galleryDiv.style.display = "flex";
     topBar.style.display = "flex";
     const box = document.getElementById("full-image");
     box.removeEventListener("keydown", keyDown);
@@ -309,6 +363,32 @@ function BackToGallery() {
     footer.style.display = "block";
     const yscroll = document.body.getAttribute("previous_y_scroll_location");
     window.scrollTo(0, yscroll);
+}
+
+async function on_click_image(e) {
+    if (delete_mode) {
+        let value = window.confirm("Delete this image?")
+        if (!value) {
+            return
+        }
+
+        //console.log("e: ", e);
+
+        const src = e.target.src;
+        const filenameStart = src.lastIndexOf("/");
+        const delete_url = "/delete" + src.substring(filenameStart);
+
+        console.log("sending: ", delete_url);
+
+        await fetch(delete_url,
+            headers = {
+                "X-CSRFToken": getCSRF()
+            }
+        );
+
+    } else {
+        openBigImage(e)
+    }
 }
 
 function openBigImage(e) {
@@ -341,11 +421,15 @@ function makeBigImage(description, source) {
     const bigImage = makeBigImageElement(source);
     backbutton.style.display = "grid";
 
+    //bigImage.classList.remove("full-size");
+
     bigImage.id = "full-image";
     bigImage.src = source;
     bigImage.setAttribute("tabindex", "0");
     bigImageDiv.addEventListener("click", nextOrPrev);
     bigImageDiv.addEventListener("keydown", keyDown);
+    bigImageDiv.addEventListener("dblclick", make_bigger);
+
 
     bigImageDiv.appendChild(bigImage);
 
@@ -382,23 +466,23 @@ function makeBigImageElement(source) {
     return image;
 }
 
+const STEP_SIZE = 30;
+
 function makeInSteps(images) {
     //const searchString = window.location.search.substring(1);
     //console.log(images)
 
     const sort_select = document.getElementById("sort-select-dropdown");
-    console.log(sort_select.value)
     if (sort_select.value === "old") {
         images.reverse();
     }
     
     const len = images.length;
-    const STEP_SIZE = 40;
     for (let i=0; i*STEP_SIZE < len; i++) {
         (function(j) {
             let sl = images.slice(j*STEP_SIZE, (j+1)*STEP_SIZE);
             window.setTimeout(() => {
-                makeStep(sl, j===0);
+                makeStep(sl, j);
                 if ((j+1)*STEP_SIZE >= len) {
                     console.log("finished loading");
                 }
@@ -407,7 +491,10 @@ function makeInSteps(images) {
     }
 }
 
-function makeStep(images, first_step) {
+function makeStep(images, step_index) {
+    const first_step = step_index === 0;
+    let count = 0;
+    const divs = document.getElementsByClassName("gallery-col");
     for (const [file, description] of images) {
         const filename = "/image/" + file;
         const image = makeImage(filename);
@@ -416,16 +503,32 @@ function makeStep(images, first_step) {
         }
         image.className = "image";
         image.alt = filename;
+        image.id = "image_id_" + (step_index * STEP_SIZE + count).toString();
         image.setAttribute("description", description);
-        image.addEventListener("click", openBigImage);
-        galleryDiv.appendChild(image);
+        image.addEventListener("click", on_click_image);
+        //galleryDiv.appendChild(image);
+        divs[count % 3].appendChild(image)
+        count += 1;
     }
 }
 
 function makeImages() {
     const searchString = window.location.search;
     res = fetch("list-media" + searchString)
-        .then(r => r.json())
+        .then(async r => {
+            if (r.ok) {
+                return r.json();
+            }
+
+            // Not logged in
+            if (r.status === 401) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            const text = await r.text();
+            throw new Error(`Request failed (${r.status} ${r.statusText}): ${text}`);
+        })
         .then(makeInSteps)
         .catch(error => {
             console.log(error);
@@ -434,8 +537,10 @@ function makeImages() {
             errorMessage = document.createElement("p");
             errorNotice.textContent = "Error Failed to get list of media";
             errorMessage.textContent = error.toString();
-            galleryDiv.appendChild(errorNotice);
-            galleryDiv.appendChild(errorMessage);
+
+            const contentWrapper = document.getElementById("content-wrapper-div");
+            contentWrapper.insertBefore(errorNotice, galleryDiv);
+            contentWrapper.insertBefore(errorMessage, galleryDiv);
         });
 }
 

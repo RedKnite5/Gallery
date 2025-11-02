@@ -27,7 +27,7 @@ a {
 .searchbar-wrapper {
   position: relative;
   height: 5vh;
-  margin-right: 10px;
+  margin-right: .5em;
   padding: 0px;
   margin-top: 0px;
   margin-bottom: 0px;
@@ -77,18 +77,37 @@ a {
 }
 
 .sort-select {
-  margin-right: 5px;
+  margin-right: .5em;
   height: 4vh;
+}
+
+#delete-button {
+  margin-right: .5em;
+  height: 4vh;
+  border: none;
+  border-radius: 3px;
+  width: 7em;
+}
+
+.red-outline {
+  box-shadow:
+    0 0 0 2px red,
+    0 0 0 1px red inset;
 }
 
 #gallery {
   background-color: var(--bg);
+  padding-top: 2px;
+  display: flex;
+}
+
+.gallery-col {
+  width: 33%;
+  margin: 0 .166%;
 }
 
 .image {
-  width: 33%;
-  height: auto;
-  margin: 0 .166%;
+  width: 100%;
 }
 
 #full-image:focus {
@@ -163,6 +182,12 @@ a {
   height: 95svh;
   max-width: 98%;
   object-fit: contain;
+}
+
+#full-image.full-size {
+  object-fit: cover;
+  height: auto;
+  min-height: 95svh;
 }
 
 footer {

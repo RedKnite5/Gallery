@@ -1,0 +1,46 @@
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --fg: #000000;
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --fg: #ffffff;
+}
+
+
+body {
+    background-color: var(--bg);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.outer-box {
+    display: flex;
+    width: 100%;
+    height: 93vh;
+    justify-content: center;
+}
+
+.login-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #56aef6;
+    width: 40%;
+    height: 80%;
+    margin-top: 5%;
+    border-radius: 3em;
+}
+
+#login-title {
+    margin-bottom: 20%;
+}
+
+.login-input {
+    margin-bottom: 5%;
+}

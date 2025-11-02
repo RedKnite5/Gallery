@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login</title>
+    <meta charset="UTF-8">
+    <script src="login.js" async></script>
+    <link rel="stylesheet" href="./login.css">
+    <link rel="stylesheet" href="./general.css">
+</head>
+
+<body>
+
+<div id="top" class="top-bar">
+    <p class="title">
+        <a href="/gallery/">My Gallery</a>
+    </p>
+
+    <div class="flexgrow"></div>
+
+    <label class="switch" id="darkmode-container">
+        <input type="checkbox" id="darkmode-checkbox">
+        <span class="slider round" id="darkmode-slider">
+            <img src="sun-outline.svg" alt="sun" class="icon sun">
+            <img src="moon-outline.svg" alt="moon" class="icon moon">
+        </span>
+    </label>
+</div>
+
+<div class="outer-box">
+<div class="login-box" text-align="center">
+
+<h1 id="login-title" text-align="center">
+Login
+</h1>
+
+<label for="username-input">Username</label>
+<input id="username-input" class="login-input">
+
+<label for="password-input">Password</label>
+<input id="password-input" class="login-input">
+
+<button id="login-confirm">login</button>
+
+</div>
+</div>
+
+
+</body>
+</html>

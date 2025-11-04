@@ -1,28 +1,7 @@
+import * as utils from './utils.mjs'
 
-const preload_videos = false;
 
 let delete_mode = false;
-
-const checkbox = document.getElementById("darkmode-checkbox");
-
-(function() {
-    const theme = localStorage.getItem("theme") || "light";
-    document.documentElement.setAttribute("data-theme", theme);
-
-    document.body.classList.add("disable-transitions");
-
-    if (theme === "light") {
-        checkbox.checked = false;
-    } else {
-        checkbox.checked = true;
-    }
-
-    requestAnimationFrame(() => {
-        document.body.classList.remove("disable-transitions");
-    });
-    const slider = document.getElementById("darkmode-slider");
-    slider.classList.add("ready");
-})();
 
 window.addEventListener("load", setup);
 
@@ -32,8 +11,9 @@ const galleryDiv = document.getElementById("gallery");
 const bigImageDiv = document.getElementById("big-image-div");
 const tagText = document.getElementById("tags");
 const tagForm = document.getElementById("form");
-const backbutton = document.getElementById("back-button");
+const backButton = document.getElementById("back-button");
 const deleteButton = document.getElementById("delete-button");
+const footer = document.getElementById("footer");
 
 
 function setup() {
@@ -42,12 +22,10 @@ function setup() {
     tagForm.addEventListener("change", submitTags);
     tagForm.addEventListener("submit", submitTags);
 
-    backbutton.addEventListener("click", BackToGallery);
+    backButton.addEventListener("click", BackToGallery);
 
     const clear_search_button = document.getElementById("clear-search-button-container");
     clear_search_button.addEventListener("click", clear_search);
-
-    checkbox.addEventListener("change", dark_mode_toggle);
 
     const sort_select = document.getElementById("sort-select-dropdown");
     sort_select.addEventListener("change", change_sorting);
@@ -58,9 +36,6 @@ function setup() {
     searchbar.value = urlParams.get("q");
 
     deleteButton.addEventListener("click", enable_delete_selection);
-
-    const logoutButton = document.getElementById("logout-button");
-    logoutButton.addEventListener("click", logout);
 
     makeImages();
 }
@@ -93,16 +68,6 @@ function f_scrollTop() {
 	);
 }
 
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-function getCSRF() {
-    return getCookie("csrf_token");
-}
-
 function is_video_file(filename) {
     const video_formats = [".mov", ".mp4"];
     for (const format of video_formats) {
@@ -123,16 +88,6 @@ function prep_source_for_selector(source) {
 function get_search_string_from_url() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("q");
-}
-
-function dark_mode_toggle(event) {
-    let theme = "light";
-    if (event.currentTarget.checked) {
-        theme = "dark";
-    }
-
-    localStorage.setItem("theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
 }
 
 function change_sorting(event) {
@@ -182,17 +137,6 @@ function clear_search(event) {
     searchbar.value = "";
 }
 
-async function logout(event) {
-    await fetch("/logout/", {
-        method: "POST",
-        headers: {
-            "credentials": "include",
-            "X-CSRFToken": getCSRF()
-        }
-    });
-
-    window.location.href = "login.html";
-}
 
 function make_bigger(event) {
     const fullImage = document.getElementById("full-image");
@@ -210,7 +154,7 @@ function should_switch_image(x, y) {
     }
 
     // don't switch if clicked too close to back button
-    const currentTop = parseInt(window.getComputedStyle(backbutton).top, 10);
+    const currentTop = parseInt(window.getComputedStyle(backButton).top, 10);
     const y_bottom = back_arrow_size + currentTop;
     if (x < back_arrow_size && y < y_bottom) {
         return false;
@@ -302,7 +246,6 @@ function changeBigImage(elem) {
 
 async function submitTags(event) {
     event.preventDefault();
-    const tags = document.getElementById("tags");
     const bigImage = document.getElementById("full-image");
 
     let src = bigImage.src;
@@ -310,16 +253,16 @@ async function submitTags(event) {
         src = bigImage.firstChild.src;
     }
     
-    console.log("submitting: ", tags.value);
+    console.log("submitting: ", tagText.value);
     const promise = fetch("/saving/", {
         method: "POST",
+        credentials: "include",
         headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "credentials": "include",
-            "X-CSRFToken": getCSRF()
+            "X-CSRFToken": utils.getCSRF()
         },
-        body: JSON.stringify({tags: tags.value, name: src})
+        body: JSON.stringify({tags: tagText.value, name: src})
     });
 
     const escapedPath = prep_source_for_selector(src);
@@ -341,9 +284,16 @@ async function submitTags(event) {
         console.log(`cant find: '${escapedPath}'`);
     }
 
-    await promise;
+    await promise.then(async r => {
+        if (r.ok) {
+            return;
+        }
 
-    img_elem.setAttribute("description", tags.value);
+        const text = await r.text();
+        throw new Error(`Request failed (${r.status} ${r.statusText}): ${text}`);
+    });
+
+    img_elem.setAttribute("description", tagText.value);
 
     tagText.style.height = "";
     tagText.style.height = tagText.scrollHeight + "px";
@@ -358,8 +308,7 @@ function BackToGallery() {
     box.removeEventListener("keydown", keyDown);
     box.parentNode.removeChild(box);
     tagForm.style.display = "none";
-    backbutton.style.display = "none";
-    const footer = document.getElementById("footer");
+    backButton.style.display = "none";
     footer.style.display = "block";
     const yscroll = document.body.getAttribute("previous_y_scroll_location");
     window.scrollTo(0, yscroll);
@@ -372,20 +321,25 @@ async function on_click_image(e) {
             return
         }
 
-        //console.log("e: ", e);
-
         const src = e.target.src;
         const filenameStart = src.lastIndexOf("/");
         const delete_url = "/delete" + src.substring(filenameStart);
 
         console.log("sending: ", delete_url);
 
-        await fetch(delete_url,
-            headers = {
-                "credentials": "include",
-                "X-CSRFToken": getCSRF()
+        await fetch(delete_url, {
+            credentials: "include",
+            headers: {
+                "X-CSRFToken": utils.getCSRF()
             }
-        );
+        }).then(async r => {
+            if (r.ok) {
+                return;
+            }
+
+            const text = await r.text();
+            throw new Error(`Request failed (${r.status} ${r.statusText}): ${text}`);
+        });
 
     } else {
         openBigImage(e)
@@ -397,7 +351,6 @@ function openBigImage(e) {
     const yscroll = f_scrollTop();
     document.body.setAttribute("previous_y_scroll_location", yscroll);
 
-    const footer = document.getElementById("footer");
     footer.style.display = "none";
 
     let src = e.target.src;
@@ -420,7 +373,7 @@ function makeBigImage(description, source) {
     topBar.style.display = "none";
 
     const bigImage = makeBigImageElement(source);
-    backbutton.style.display = "grid";
+    backButton.style.display = "grid";
 
     //bigImage.classList.remove("full-size");
 
@@ -438,9 +391,9 @@ function makeBigImage(description, source) {
     const css_top = getComputedStyle(root).getPropertyValue("--button-top").trim();
     if (is_video_file(source)) {
         // Shift it down
-        backbutton.style.top = `${css_top + 32}px`;
+        backButton.style.top = `${css_top + 32}px`;
     } else {
-        backbutton.style.top = css_top
+        backButton.style.top = css_top
     }
 
 
@@ -484,9 +437,6 @@ function makeInSteps(images) {
             let sl = images.slice(j*STEP_SIZE, (j+1)*STEP_SIZE);
             window.setTimeout(() => {
                 makeStep(sl, j);
-                if ((j+1)*STEP_SIZE >= len) {
-                    console.log("finished loading");
-                }
             }, j*2000);
         })(i);
     }
@@ -515,27 +465,14 @@ function makeStep(images, step_index) {
 
 function makeImages() {
     const searchString = window.location.search;
-    res = fetch("list-media" + searchString)
-        .then(async r => {
-            if (r.ok) {
-                return r.json();
-            }
-
-            // Not logged in
-            if (r.status === 401) {
-                window.location.href = "login.html";
-                return;
-            }
-
-            const text = await r.text();
-            throw new Error(`Request failed (${r.status} ${r.statusText}): ${text}`);
-        })
+    fetch("list-media" + searchString)
+        .then(utils.listMediaToJson)
         .then(makeInSteps)
         .catch(error => {
             console.log(error);
 
-            errorNotice = document.createElement("h2");
-            errorMessage = document.createElement("p");
+            const errorNotice = document.createElement("h2");
+            const errorMessage = document.createElement("p");
             errorNotice.textContent = "Error Failed to get list of media";
             errorMessage.textContent = error.toString();
 
@@ -549,7 +486,7 @@ function makeImage(filename) {
     const image = document.createElement("img");
 
     if (is_video_file(filename)) {
-        thumbpath = filename.replace("/image/", "/thumbnail/");
+        const thumbpath = filename.replace("/image/", "/thumbnail/");
         image.src = thumbpath;
     } else {
         image.src = filename;

@@ -1,50 +1,14 @@
+import * as utils from './utils.mjs'
 
 const tagList = document.getElementById("tag-list");
 window.addEventListener("load", makeTags);
 
 
-(function() {
-    const theme = localStorage.getItem("theme") || "light";
-    document.documentElement.setAttribute("data-theme", theme);
-
-    document.body.classList.add("disable-transitions");
-
-    const checkbox = document.getElementById("darkmode-checkbox");
-
-    if (theme === "light") {
-        checkbox.checked = false;
-    } else {
-        checkbox.checked = true;
-    }
-
-    checkbox.addEventListener("change", dark_mode_toggle);
-
-    requestAnimationFrame(() => {
-        document.body.classList.remove("disable-transitions");
-    });
-    const slider = document.getElementById("darkmode-slider");
-    slider.classList.add("ready");
-
-    const logoutButton = document.getElementById("logout-button");
-    logoutButton.addEventListener("click", logout);
-})();
-
-function dark_mode_toggle(event) {
-    let theme = "light";
-    if (event.currentTarget.checked) {
-        theme = "dark";
-    }
-
-    localStorage.setItem("theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
-}
-
 function makeTags() {
     const tags = new Set();
 
-    // .then(r => r.ok ? r.json() : Promise.reject(`Server error: ${r.status}`))
-    res = fetch("list-media")
-        .then(r => r.json())
+    fetch("list-media")
+        .then(utils.listMediaToJson)
         .then(images => {
             for (const [file, description] of images) {
                 const list = description.split(" ");
@@ -53,7 +17,7 @@ function makeTags() {
                 }
             }
 
-            tag_array = Array.from(tags)
+            const tag_array = Array.from(tags)
             tag_array.sort()
 
             for (const item of tag_array) {
@@ -77,11 +41,3 @@ function makeTags() {
         });
 }
 
-async function logout(event) {
-    await fetch("/logout/", {
-        method: "POST",
-        credentials: "include"
-    });
-
-    window.location.href = "login.html";
-}

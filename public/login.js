@@ -1,3 +1,4 @@
+import * as utils from './utils.mjs'
 
 const loginButton = document.getElementById("login-confirm");
 loginButton.addEventListener("click", login);
@@ -21,7 +22,13 @@ async function login(event) {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
-    });
+    }).then(async r => {
+            if (r.ok) {
+                window.location.href = "/gallery/";
+                return;
+            }
 
-    window.location.href = "/gallery/";
+            const text = await r.text();
+            throw new Error(`Request failed (${r.status} ${r.statusText}): ${text}`);
+    });
 }
